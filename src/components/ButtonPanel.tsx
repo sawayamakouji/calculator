@@ -1,5 +1,10 @@
 import React from 'react';
 import Button from './Button';
+// import clickSound from '..click.mp3';
+// import errorSound from '..error.mp3';
+// import successSound from '..success.mp3';
+
+
 
 interface Props {
   onButtonClick: (label: string) => void;

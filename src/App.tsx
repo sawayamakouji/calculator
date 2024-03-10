@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import Display from './components/Display';
 import ButtonPanel from './components/ButtonPanel';
 import './App.css';
-// import clickSound from './sounds/click.mp3';
-// import errorSound from './sounds/error.mp3';
-// import successSound from './sounds/success.mp3';
 import ResultPopup from './components/ResultPopup'; // ポップアップコンポーネントのインポート
 
-
-
-
 const App: React.FC = () => {
+    type Choice = {
+      message: {
+        role: string;
+        content: string;
+      };
+    };
   const [currentValue, setCurrentValue] = useState('0');
   const [previousValue, setPreviousValue] = useState<string | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
@@ -18,7 +18,6 @@ const App: React.FC = () => {
   const MAX_DIGITS = 10; // 許容する最大桁数
   const [popupOpen, setPopupOpen] = useState(false); // ポップアップ表示用のstate
   const [trivia, setTrivia] = useState<string[]>([]);
-
   const handleButtonClick = (label: string): void => {
     if (/\d/.test(label)) {
       // 数字の場合
@@ -53,7 +52,7 @@ const App: React.FC = () => {
     else if (label === '=') {
       if (operator && previousValue !== null) {
         const result = calculate(previousValue, currentValue, operator);
-   // src/App.tsx
+
         const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
         if (typeof apiKey === 'undefined') {
           throw new Error('REACT_APP_OPENAI_API_KEY is not defined');
@@ -75,17 +74,32 @@ const App: React.FC = () => {
           const data = await response.json();
           return data;
         };
+        
         const handleFetchTrivia = async (result: number) => {
-          const fetchedTrivia = await fetchTrivia(result);
-          //setTrivia([...fetchedTrivia]); // 例として、取得した情報をtrivia状態にセット
-        };
+          try {
+            const fetchedTriviaResponse = await fetchTrivia(result);
+            if (!fetchedTriviaResponse.choices || !Array.isArray(fetchedTriviaResponse.choices)) {
+              // fetchedTriviaResponse.choices が null や undefined であるか、配列ではない場合のエラー処理を行う
+              console.error('Trivia choices are missing or not in the expected format.');
+              // または、エラーメッセージをユーザーに表示するか、適切なエラーハンドリングを行う
+            } else {
+              // fetchedTriviaResponse.choices が存在し、配列である場合は、通常の処理を続行する
+              const fetchedTriviaContent = fetchedTriviaResponse.choices.map((choice: Choice) => choice.message.content);
+              setTrivia(fetchedTriviaContent);
+            }
+          }
+          catch (error) {
+          console.error('An error occurred', error);
+          } 
+        }
+
+      handleFetchTrivia(result).then(() => {
         setCurrentValue(formatResult(result));
         setPreviousValue(null);
         setOperator(null);
         setWaitingForOperand(true);
-          //setTrivia(triviaInfo); // 豆知識をセット
         setPopupOpen(true); // ポップアップを表示
-
+      });
       }
     } else if (label === 'AC') {
       // 全てクリア
@@ -108,11 +122,6 @@ const App: React.FC = () => {
     return fixedResult;
   };
   
-  // const playSound = (soundFile: string) => {
-  //   const sound = new Audio(soundFile);
-  //   sound.play();
-  // };
-  
   
 
   const calculate = (num1: string, num2: string, operator: string): number => {
@@ -134,27 +143,18 @@ const App: React.FC = () => {
 
 
 
-
-
-  // const getTrivia = (result: number) => {
-  //   if (result === 42) {
-  //     return "42は、宇宙と人生の究極の答えです。";
-  //   }
-  //   return "計算結果は" + result + "です。";
-  // };
-
   return (
     <div className="App">
       <Display value={currentValue} />
       <ButtonPanel onButtonClick={handleButtonClick} />
       {popupOpen && (
       // App コンポーネント内
-<ResultPopup
-  isOpen={popupOpen}
-  onClose={() => setPopupOpen(false)}
-  result={currentValue}
-  info={trivia.map((item: string) => `${item}`).join(', ')}
-/>
+        <ResultPopup
+        isOpen={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        result={currentValue}
+        info={trivia.map((item: string) => `${item}`).join(', ')}
+        />
 
       )}
     </div>
