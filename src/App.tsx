@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import Display from './components/Display';
 import ButtonPanel from './components/ButtonPanel';
 import './App.css';
-import clickSound from './sounds/click.mp3';
-import errorSound from './sounds/error.mp3';
-import successSound from './sounds/success.mp3';
+// import clickSound from './sounds/click.mp3';
+// import errorSound from './sounds/error.mp3';
+// import successSound from './sounds/success.mp3';
 import ResultPopup from './components/ResultPopup'; // ポップアップコンポーネントのインポート
 
 
@@ -75,10 +75,10 @@ const App: React.FC = () => {
           const data = await response.json();
           return data;
         };
-        const handleFetchTrivia = async (result: number) => {
-          const fetchedTrivia = await fetchTrivia(result);
-          setTrivia([...fetchedTrivia]); // 例として、取得した情報をtrivia状態にセット
-        };
+        // const handleFetchTrivia = async (result: number) => {
+        //   const fetchedTrivia = await fetchTrivia(result);
+        //   setTrivia([...fetchedTrivia]); // 例として、取得した情報をtrivia状態にセット
+        // };
         setCurrentValue(formatResult(result));
         setPreviousValue(null);
         setOperator(null);
@@ -108,10 +108,10 @@ const App: React.FC = () => {
     return fixedResult;
   };
   
-  const playSound = (soundFile: string) => {
-    const sound = new Audio(soundFile);
-    sound.play();
-  };
+  // const playSound = (soundFile: string) => {
+  //   const sound = new Audio(soundFile);
+  //   sound.play();
+  // };
   
   
 
