@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Display from './components/Display';
+import { ClientOptions, OpenAI } from "openai";
+
 import ButtonPanel from './components/ButtonPanel';
 import './App.css';
 import ResultPopup from './components/ResultPopup'; // ポップアップコンポーネントのインポート
@@ -11,6 +13,7 @@ const App: React.FC = () => {
         content: string;
       };
     };
+
   const [currentValue, setCurrentValue] = useState('0');
   const [previousValue, setPreviousValue] = useState<string | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
