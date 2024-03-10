@@ -75,15 +75,15 @@ const App: React.FC = () => {
           const data = await response.json();
           return data;
         };
-        // const handleFetchTrivia = async (result: number) => {
-        //   const fetchedTrivia = await fetchTrivia(result);
-        //   setTrivia([...fetchedTrivia]); // 例として、取得した情報をtrivia状態にセット
-        // };
+        const handleFetchTrivia = async (result: number) => {
+          const fetchedTrivia = await fetchTrivia(result);
+          //setTrivia([...fetchedTrivia]); // 例として、取得した情報をtrivia状態にセット
+        };
         setCurrentValue(formatResult(result));
         setPreviousValue(null);
         setOperator(null);
         setWaitingForOperand(true);
-        //setTrivia(triviaInfo); // 豆知識をセット
+          //setTrivia(triviaInfo); // 豆知識をセット
         setPopupOpen(true); // ポップアップを表示
 
       }
@@ -149,12 +149,12 @@ const App: React.FC = () => {
       <ButtonPanel onButtonClick={handleButtonClick} />
       {popupOpen && (
       // App コンポーネント内
-      <ResultPopup
-        isOpen={popupOpen}
-        onClose={() => setPopupOpen(false)}
-        result={currentValue}
-        info={trivia.map((item: string) => `${item}`).join(', ')} // トリビアの内容を文字列に結合
-      />
+<ResultPopup
+  isOpen={popupOpen}
+  onClose={() => setPopupOpen(false)}
+  result={currentValue}
+  info={trivia.map((item: string) => `${item}`).join(', ')}
+/>
 
       )}
     </div>
