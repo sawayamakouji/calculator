@@ -49,3 +49,26 @@
 .button.equals {
   grid-row: span 2; /* 2行にまたがる */
 }
+
+/* ポップアップの背景スタイル */
+.popup-background {
+  position: fixed; /* 画面全体に固定 */
+  top: 0;
+  left: 0;
+  width: 100%; /* 画面全体の幅 */
+  height: 100%; /* 画面全体の高さ */
+  background-color: rgba(0, 0, 0, 0.5); /* 背景を暗くする */
+  display: flex;
+  justify-content: center; /* 中央揃え */
+  align-items: center; /* 中央揃え */
+  z-index: 2; /* 計算機コンポーネントより前面に表示 */
+}
+
+/* ポップアップコンテンツのスタイル */
+.popup-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 影をつける */
+  z-index: 3; /* 背景よりも前面に表示 */
+}

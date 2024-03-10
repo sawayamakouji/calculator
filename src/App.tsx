@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import Display from './components/Display';
 import ButtonPanel from './components/ButtonPanel';
 import './App.css';
+import clickSound from './sounds/click.mp3';
+import errorSound from './sounds/error.mp3';
+import successSound from './sounds/success.mp3';
+import ResultPopup from './components/ResultPopup'; // ポップアップコンポーネントのインポート
+
 
 
 
@@ -11,7 +16,8 @@ const App: React.FC = () => {
   const [operator, setOperator] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
   const MAX_DIGITS = 10; // 許容する最大桁数
-
+  const [popupOpen, setPopupOpen] = useState(false); // ポップアップ表示用のstate
+  const [trivia, setTrivia] = useState<string[]>([]);
 
   const handleButtonClick = (label: string): void => {
     if (/\d/.test(label)) {
@@ -47,10 +53,33 @@ const App: React.FC = () => {
     else if (label === '=') {
       if (operator && previousValue !== null) {
         const result = calculate(previousValue, currentValue, operator);
+   
+        const fetchTrivia = async (result: number) => {
+          const response = await fetch('API_ENDPOINT', {
+            method: 'POST', // または 'GET'
+            headers: {
+              'Content-Type': 'gpt-4-turbo-preview',
+              'Authorization': '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'
+            },
+            body: JSON.stringify({
+              prompt: `計算結果${result}にまつわる面白い事実を教えてください。`, // プロンプトの内容を調整
+              // その他の必要なパラメータ
+            })
+          });
+          const data = await response.json();
+          return data; // 取得したデータを返す
+        };
+        const handleFetchTrivia = async (result: number) => {
+          const fetchedTrivia = await fetchTrivia(result);
+          setTrivia([...fetchedTrivia]); // 例として、取得した情報をtrivia状態にセット
+        };
         setCurrentValue(formatResult(result));
         setPreviousValue(null);
         setOperator(null);
         setWaitingForOperand(true);
+        //setTrivia(triviaInfo); // 豆知識をセット
+        setPopupOpen(true); // ポップアップを表示
+
       }
     } else if (label === 'AC') {
       // 全てクリア
@@ -73,6 +102,11 @@ const App: React.FC = () => {
     return fixedResult;
   };
   
+  const playSound = (soundFile: string) => {
+    const sound = new Audio(soundFile);
+    sound.play();
+  };
+  
   
 
   const calculate = (num1: string, num2: string, operator: string): number => {
@@ -92,10 +126,31 @@ const App: React.FC = () => {
     }
   };
 
+
+
+
+
+  // const getTrivia = (result: number) => {
+  //   if (result === 42) {
+  //     return "42は、宇宙と人生の究極の答えです。";
+  //   }
+  //   return "計算結果は" + result + "です。";
+  // };
+
   return (
     <div className="App">
       <Display value={currentValue} />
       <ButtonPanel onButtonClick={handleButtonClick} />
+      {popupOpen && (
+      // App コンポーネント内
+      <ResultPopup
+        isOpen={popupOpen}
+        onClose={() => setPopupOpen(false)}
+        result={currentValue}
+        info={trivia.map((item: string) => `${item}`).join(', ')} // トリビアの内容を文字列に結合
+      />
+
+      )}
     </div>
   );
 };
