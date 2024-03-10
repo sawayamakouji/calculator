@@ -60,19 +60,20 @@ const App: React.FC = () => {
         }
 
         const fetchTrivia = async (result: number) => {
-          const response = await fetch('API_ENDPOINT', {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', { // APIエンドポイントのURLを指定
             method: 'POST', // または 'GET'
             headers: {
               'Content-Type': 'gpt-4-turbo-preview',
-              'Authorization': apiKey
+              'Authorization': `Bearer ${apiKey}` // APIキーをBearerトークンとして指定
             },
             body: JSON.stringify({
               prompt: `計算結果${result}にまつわる面白い事実を教えてください。`, // プロンプトの内容を調整
               // その他の必要なパラメータ
             })
           });
+        
           const data = await response.json();
-          return data; // 取得したデータを返す
+          return data;
         };
         const handleFetchTrivia = async (result: number) => {
           const fetchedTrivia = await fetchTrivia(result);
