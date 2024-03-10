@@ -53,13 +53,18 @@ const App: React.FC = () => {
     else if (label === '=') {
       if (operator && previousValue !== null) {
         const result = calculate(previousValue, currentValue, operator);
-   
+   // src/App.tsx
+        const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+        if (typeof apiKey === 'undefined') {
+          throw new Error('REACT_APP_OPENAI_API_KEY is not defined');
+        }
+
         const fetchTrivia = async (result: number) => {
           const response = await fetch('API_ENDPOINT', {
             method: 'POST', // または 'GET'
             headers: {
               'Content-Type': 'gpt-4-turbo-preview',
-              'Authorization': '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'
+              'Authorization': apiKey
             },
             body: JSON.stringify({
               prompt: `計算結果${result}にまつわる面白い事実を教えてください。`, // プロンプトの内容を調整
