@@ -1,131 +1,17 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import Display from './components/Display';
-import { ClientOptions, OpenAI } from "openai";
-
 import ButtonPanel from './components/ButtonPanel';
+import ResultPopup from './components/ResultPopup'; // このコンポーネントは計算結果のトリビアを表示するために使用します
 import './App.css';
-import ResultPopup from './components/ResultPopup'; // ポップアップコンポーネントのインポート
 
 const App: React.FC = () => {
-    type Choice = {
-      message: {
-        role: string;
-        content: string;
-      };
-    };
-
   const [currentValue, setCurrentValue] = useState('0');
   const [previousValue, setPreviousValue] = useState<string | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
-  const MAX_DIGITS = 10; // 許容する最大桁数
-  const [popupOpen, setPopupOpen] = useState(false); // ポップアップ表示用のstate
-  const [trivia, setTrivia] = useState<string[]>([]);
-  const handleButtonClick = (label: string): void => {
-    if (/\d/.test(label)) {
-      // 数字の場合
-      if (waitingForOperand) {
-        setCurrentValue(label);
-        setWaitingForOperand(false);
-      } else {
-        setCurrentValue(currentValue === '0' ? label : currentValue + label);
-      }
-    } else if (label === '.') {
-      // 小数点の場合
-      if (waitingForOperand) {
-        setCurrentValue('0.');
-        setWaitingForOperand(false);
-      } else if (!currentValue.includes('.')) {
-        // すでに小数点が含まれていないことを確認
-        setCurrentValue(currentValue + '.');
-      }
-    } else if (label === '+' || label === '-' || label === '*' || label === '/') {
-      if (!waitingForOperand && previousValue && operator) {
-        // 既に演算子が押されていて次の操作が行われた場合、計算を行う
-        const result = calculate(previousValue, currentValue, operator);
-        setCurrentValue(result.toString());
-        setPreviousValue(result.toString());  // 計算結果を保存
-      } else {
-        // 初めて演算子が押された場合、現在の値を保存
-        setPreviousValue(currentValue);
-      }
-      setOperator(label);
-      setWaitingForOperand(true);  // 次の数値入力を待つ
-    } // 等号の場合の処理
-    else if (label === '=') {
-      if (operator && previousValue !== null) {
-        const result = calculate(previousValue, currentValue, operator);
-
-        const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
-        if (typeof apiKey === 'undefined') {
-          throw new Error('REACT_APP_OPENAI_API_KEY is not defined');
-        }
-
-        const fetchTrivia = async (result: number) => {
-          const response = await fetch('https://api.openai.com/v1/chat/completions', { // APIエンドポイントのURLを指定
-            method: 'POST', // または 'GET'
-            headers: {
-              'Content-Type': 'gpt-4-turbo-preview',
-              'Authorization': `Bearer ${apiKey}` // APIキーをBearerトークンとして指定
-            },
-            body: JSON.stringify({
-              prompt: `計算結果${result}にまつわる面白い事実を教えてください。`, // プロンプトの内容を調整
-              // その他の必要なパラメータ
-            })
-          });
-        
-          const data = await response.json();
-          return data;
-        };
-        
-        const handleFetchTrivia = async (result: number) => {
-          try {
-            const fetchedTriviaResponse = await fetchTrivia(result);
-            if (!fetchedTriviaResponse.choices || !Array.isArray(fetchedTriviaResponse.choices)) {
-              // fetchedTriviaResponse.choices が null や undefined であるか、配列ではない場合のエラー処理を行う
-              console.error('Trivia choices are missing or not in the expected format.');
-              // または、エラーメッセージをユーザーに表示するか、適切なエラーハンドリングを行う
-            } else {
-              // fetchedTriviaResponse.choices が存在し、配列である場合は、通常の処理を続行する
-              const fetchedTriviaContent = fetchedTriviaResponse.choices.map((choice: Choice) => choice.message.content);
-              setTrivia(fetchedTriviaContent);
-            }
-          }
-          catch (error) {
-          console.error('An error occurred', error);
-          } 
-        }
-
-      handleFetchTrivia(result).then(() => {
-        setCurrentValue(formatResult(result));
-        setPreviousValue(null);
-        setOperator(null);
-        setWaitingForOperand(true);
-        setPopupOpen(true); // ポップアップを表示
-      });
-      }
-    } else if (label === 'AC') {
-      // 全てクリア
-      setCurrentValue('0');
-      setPreviousValue(null);
-      setOperator(null);
-      setWaitingForOperand(false);
-    }
-    // 他のケースは省略...
-  };
-  const formatResult = (result: number): string => {
-    // 小数点以下を固定して丸める（例: 最大6桁）
-    let fixedResult = result.toFixed(6);
-    // 不要な末尾のゼロを取り除く
-    fixedResult = Number(fixedResult).toString();
-    // 桁数が多い場合は指数形式で表示する
-    if (fixedResult.length > MAX_DIGITS) {
-      return Number(fixedResult).toExponential(MAX_DIGITS - 1).replace(/(?:\.0+|(\.\d+?)0+)$/, "$1");
-    }
-    return fixedResult;
-  };
-  
-  
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [trivia, setTrivia] = useState('');
 
   const calculate = (num1: string, num2: string, operator: string): number => {
     const firstNum = parseFloat(num1);
@@ -144,21 +30,68 @@ const App: React.FC = () => {
     }
   };
 
+  const handleButtonClick = (label: string): void => {
+    if (/\d/.test(label)) {
+      if (waitingForOperand) {
+        setCurrentValue(label);
+        setWaitingForOperand(false);
+      } else {
+        setCurrentValue(currentValue === '0' ? label : currentValue + label);
+      }
+    } else if (label === '.') {
+      if (!currentValue.includes('.')) {
+        setCurrentValue(currentValue + '.');
+      }
+    } else if (['+', '-', '*', '/'].includes(label)) {
+      setOperator(label);
+      setWaitingForOperand(true);
+      if (!waitingForOperand) {
+        if (previousValue !== null && operator !== null) {
+          const result = calculate(previousValue, currentValue, operator);
+          setCurrentValue(String(result));
+          setPreviousValue(null);
+        } else {
+          setPreviousValue(currentValue);
+        }
+      }
+    } else if (label === '=') {
+      if (operator && previousValue !== null) {
+        const result = calculate(previousValue, currentValue, operator);
+        setCurrentValue(String(result));
+        fetchTrivia(String(result));
+      }
+    } else if (label === 'AC') {
+      setCurrentValue('0');
+      setPreviousValue(null);
+      setOperator(null);
+      setWaitingForOperand(false);
+      setPopupOpen(false);
+    }
+  };
 
+  const fetchTrivia = async (number: string) => {
+    try {
+      const response = await axios.get(`/api/get-trivia?number=${number}`);
+      setTrivia(response.data.trivia);
+      setPopupOpen(true);
+    } catch (error) {
+      console.error('Error fetching trivia:', error);
+      setTrivia('Trivia fetch failed.');
+      setPopupOpen(true);
+    }
+  };
 
   return (
     <div className="App">
       <Display value={currentValue} />
       <ButtonPanel onButtonClick={handleButtonClick} />
       {popupOpen && (
-      // App コンポーネント内
         <ResultPopup
-        isOpen={popupOpen}
-        onClose={() => setPopupOpen(false)}
-        result={currentValue}
-        info={trivia.map((item: string) => `${item}`).join(', ')}
+          isOpen={popupOpen}
+          onClose={() => setPopupOpen(false)}
+          result={currentValue}
+          info={trivia}
         />
-
       )}
     </div>
   );
