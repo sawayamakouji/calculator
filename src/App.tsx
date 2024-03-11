@@ -76,18 +76,18 @@ const App: React.FC = () => {
       setTrivia(response.data.trivia);
       setPopupOpen(true);
     } catch (error) {
-      let errorMessage = 'Trivia fetch failed.';
+      let errorMessage = 'Triviaできなかったよfetch failed.';
       if (axios.isAxiosError(error)) {
         // OpenAIからの具体的なエラーメッセージがある場合、それを使用します。
         const serverError = error.response?.data?.error;
         if (serverError) {
-          errorMessage += ` Error: ${serverError}`;
+          errorMessage += ` できなかったError: ${serverError}`;
         } else if (error.message) {
           // ネットワークエラーなど、他の種類のエラー
-          errorMessage += ` Error: ${error.message}`;
+          errorMessage += `間に合わん Error: ${error.message}`;
         }
       }
-      console.error('Error fetching trivia:', error);
+      console.error('Errorできなかったfetching trivia:', error);
       setTrivia(errorMessage);
       setPopupOpen(true);
     }

@@ -5,7 +5,7 @@ interface ResultPopupProps {
   isOpen: boolean;
   onClose: () => void;
   result: string;
-  info: string;
+  info?: string;
 }
 
 const ResultPopup: React.FC<ResultPopupProps> = ({ isOpen, onClose, result, info }) => {
