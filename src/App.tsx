@@ -71,12 +71,24 @@ const App: React.FC = () => {
 
   const fetchTrivia = async (number: string) => {
     try {
-      const response = await axios.get(`/api/get-trivia?number=${number}`);
+      const response = await axios.get(`https://sawasawasawa.netlify.app/.netlify/functions/get-trivia
+      `);
       setTrivia(response.data.trivia);
       setPopupOpen(true);
     } catch (error) {
+      let errorMessage = 'Trivia fetch failed.';
+      if (axios.isAxiosError(error)) {
+        // OpenAIからの具体的なエラーメッセージがある場合、それを使用します。
+        const serverError = error.response?.data?.error;
+        if (serverError) {
+          errorMessage += ` Error: ${serverError}`;
+        } else if (error.message) {
+          // ネットワークエラーなど、他の種類のエラー
+          errorMessage += ` Error: ${error.message}`;
+        }
+      }
       console.error('Error fetching trivia:', error);
-      setTrivia('Trivia fetch failed.');
+      setTrivia(errorMessage);
       setPopupOpen(true);
     }
   };
