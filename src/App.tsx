@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Display from './components/Display';
 import ButtonPanel from './components/ButtonPanel';
-import ResultPopup from './components/ResultPopup'; // このコンポーネントは計算結果のトリビアを表示するために使用します
+import ResultPopup from './components/ResultPopup'; // このコンポーネントは計算結果のトリビアを表示するために使用しま
 import './App.css';
 
 const App: React.FC = () => {
