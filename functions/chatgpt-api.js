@@ -1,11 +1,13 @@
 const fetch = require("node-fetch");
 
+
+
 exports.handler = async function(event, context) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `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`
+      "Authorization": OPENAI_API_KEY
     },
     body: JSON.stringify({
       model: "gpt-3.5-turbo",
