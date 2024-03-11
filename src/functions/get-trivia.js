@@ -1,9 +1,9 @@
+
 const axios = require('axios');
 
-exports.handler = async (event) => {
-  const { number } = event.queryStringParameters;
-
+exports.handler = async function(event, context) {
   try {
+    const number = event.queryStringParameters.number;
     const response = await axios.post(
       'https://api.openai.com/v1/completions',
       {
@@ -19,11 +19,18 @@ exports.handler = async (event) => {
       }
     );
 
+    // CORSヘッダーを含むレスポンスを返します。
     return {
       statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*', // 安全性を高めるために、信頼できるドメインに限定することを推奨します。
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' // 必要に応じてメソッドを調整してください。
+      },
       body: JSON.stringify({ trivia: response.data.choices[0].text })
     };
   } catch (error) {
+    // エラーハンドリングを適切に行います。
     console.error('Error calling OpenAI API:', error);
     
     // エラーメッセージの形式をチェックし、適切なエラーメッセージを返す
@@ -41,7 +48,10 @@ exports.handler = async (event) => {
 
     return {
       statusCode: error.response ? error.response.status : 500,
-      body: JSON.stringify({ error: errorMessage })
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({ error: 'Failed to fetch trivia.' })
     };
   }
 };
