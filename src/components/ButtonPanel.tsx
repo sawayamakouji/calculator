@@ -13,7 +13,7 @@ interface Props {
 const ButtonPanel: React.FC<Props> = ({ onButtonClick }) => {
   return (
     <div>
-      <p>計算後の数字に関するウンチクをAIが返える。</p>
+      <p>計算後の数字に関するウンチクをAIが教えてくれる。</p>
     <div className="button-panel">
       <Button label="☀" onClick={() => onButtonClick("(")} />
       <Button label="💛" onClick={() => onButtonClick(")")} />
