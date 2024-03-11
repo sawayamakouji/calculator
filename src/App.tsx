@@ -71,7 +71,7 @@ const App: React.FC = () => {
 
   const fetchTrivia = async (number: string) => {
     try {
-      const response = await axios.get(`https://sawasawasawayama.netlify.app/.netlify/functions/get-trivia
+      const response = await axios.get(`https://sawasawasawayama55.netlify.app/.netlify/functions/get-trivia
       `);
       setTrivia(response.data.trivia);
       setPopupOpen(true);
