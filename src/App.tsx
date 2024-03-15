@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import OpenAI from 'openai';
+
+
+import './App.css';
 import Display from './components/Display';
 import ButtonPanel from './components/ButtonPanel';
-import ResultPopup from './components/ResultPopup'; 
-import './App.css';
-
-
-
+import ResultPopup from './components/ResultPopup';
 
 const App: React.FC = () => {
   const [currentValue, setCurrentValue] = useState('0');
@@ -15,8 +14,6 @@ const App: React.FC = () => {
   const [waitingForOperand, setWaitingForOperand] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [trivia, setTrivia] = useState('');
-  const API_KEY = process.env.REACT_APP_API_KEY;
-
 
   const calculate = (num1: string, num2: string, operator: string): number => {
     const firstNum = parseFloat(num1);
@@ -36,152 +33,64 @@ const App: React.FC = () => {
   };
 
   const handleButtonClick = (label: string): void => {
-    if (/\d/.test(label)) {
-      if (waitingForOperand) {
-        setCurrentValue(label);
+    if (/\d/.test(label) || label === '.') {
+      if (waitingForOperand || currentValue === '0') {
+        setCurrentValue(label === '.' ? '0.' : label);
         setWaitingForOperand(false);
       } else {
-        setCurrentValue(currentValue === '0' ? label : currentValue + label);
-      }
-    } else if (label === '.') {
-      if (!currentValue.includes('.')) {
-        setCurrentValue(currentValue + '.');
+        setCurrentValue(currentValue + label);
       }
     } else if (['+', '-', '*', '/'].includes(label)) {
       setOperator(label);
       setWaitingForOperand(true);
-      if (!waitingForOperand) {
-        if (previousValue !== null && operator !== null) {
-          const result = calculate(previousValue, currentValue, operator);
-          setCurrentValue(String(result));
-          setPreviousValue(null);
-        } else {
-          setPreviousValue(currentValue);
-        }
+      if (!waitingForOperand && operator && previousValue !== null) {
+        const result = calculate(previousValue, currentValue, operator);
+        setCurrentValue(String(result));
+        fetchTrivia(String(result));
+      } else {
+        setPreviousValue(currentValue);
       }
     } else if (label === '=') {
       if (operator && previousValue !== null) {
         const result = calculate(previousValue, currentValue, operator);
         setCurrentValue(String(result));
         fetchTrivia(String(result));
-        // handleFetchTrivia(result).then(() => {
-        //   setCurrentValue(formatResult(result));
-        //   setPreviousValue(null);
-        //   setOperator(null);
-        //   setWaitingForOperand(true);
-        //   setPopupOpen(true); // ポップアップを表示
-        }
+      }
     } else if (label === 'AC') {
       setCurrentValue('0');
       setPreviousValue(null);
       setOperator(null);
       setWaitingForOperand(false);
       setPopupOpen(false);
+      setTrivia('');
     }
   };
 
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'system', content: 'You are a helpful assistant.' },
-  ]);
-  const [inputValue, setInputValue] = useState<string>('');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const openai = new OpenAI({
+    apiKey: process.env.REACT_APP_OPENAI_API_KEY // This is also the default, can be omitted
+  });
 
-    if (!inputValue.trim()) return;
 
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { role: 'user', content: inputValue },
-    ]);
-
-    setInputValue('');
-
+  // Numbers APIからOpenAIのAPIに変更されたfetchTrivia関数
+  const fetchTrivia = async (number: string) => {
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [...messages, { role: 'user', content: inputValue }],
-        }),
+      const completion = await openai.completions.create({
+        model: "text-davinci-003", // Ensure you're using the correct model
+        prompt: `Tell me an interesting fact about the number ${number}.`,
+        temperature: 0.5,
+        max_tokens: 60,
+        n: 1,
+        stop: null,
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { role: 'assistant', content: data.choices[0].message.content },
-        ]);
-      } else {
-        console.error('Error:', data.error.message);
-      }
+      setTrivia(completion.choices[0].text);
+      setPopupOpen(true);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error fetching trivia with OpenAI:', error);
+      setTrivia("Could not fetch trivia for this number.");
+      setPopupOpen(true);
     }
   };
-
-  return (
-    <div>
-      <div>
-        {messages.map((message, index) => (
-          <div key={index}>
-            <strong>{message.role}: </strong>
-            {message.content}
-          </div>
-        ))}
-      </div>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Enter your message"
-        />
-        <button type="submit">Send</button>
-      </form>
-    </div>
-  );
-
-
-
-  const fetchTrivia = async (number: string) => {  const fetchTrivia = async (number: string) => {
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [...messages, { role: 'user', content: inputValue }],
-        }),
-      });
-      
-      setTrivia(response.data.trivia);
-      setPopupOpen(true);
-    } catch (error) {
-      let errorMessage = 'Triviaできなかったよfetch failed.';
-      if (axios.isAxiosError(error)) {
-        // OpenAIからの具体的なエラーメッセージがある場合、それを使用します。
-        const serverError = error.response?.data?.error;
-        if (serverError) {
-          errorMessage += ` できなかったError: ${serverError}`;
-        } else if (error.message) {
-          // ネットワークエラーなど、他の種類のエラー
-          errorMessage += `間に合わん Error: ${error.message}`;
-        }
-      }
-      console.error('Errorできなかったfetching trivia:', error);
-      setTrivia(errorMessage);
-      setPopupOpen(true);
-    }
-  }};
 
   return (
     <div className="App">
@@ -197,7 +106,6 @@ const App: React.FC = () => {
       )}
     </div>
   );
-
 };
 
 export default App;
