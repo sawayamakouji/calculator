@@ -68,7 +68,7 @@ const App: React.FC = () => {
 
 
   const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY // This is alsothe default, can be omitted
+ apiKey: process.env.REACT_APP_OPENAI_API_KEY
   });
 
 
